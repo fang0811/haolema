@@ -442,6 +442,43 @@
   .btn-submit:hover { opacity: 0.88; }
   .btn-submit:active { transform: scale(0.98); }
 
+  /* ── 社区数据条 ── */
+  .community-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 8px rgba(44,44,44,0.06);
+  }
+  .comm-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .comm-num {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .comm-label {
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 1px;
+  }
+  .comm-divider {
+    width: 1px;
+    height: 30px;
+    background: var(--line);
+    margin: 0 8px;
+  }
+
   .quote-box {
     margin-top: 24px; padding: 20px;
     border-left: 3px solid var(--accent2);
@@ -696,6 +733,24 @@
       </div>
     </div>
 
+    <!-- 社区数据区 -->
+    <div class="community-bar" id="community-bar">
+      <div class="comm-item">
+        <span class="comm-num" id="comm-views">—</span>
+        <span class="comm-label">次浏览</span>
+      </div>
+      <div class="comm-divider"></div>
+      <div class="comm-item">
+        <span class="comm-num" id="comm-seeds">—</span>
+        <span class="comm-label">人种下种子</span>
+      </div>
+      <div class="comm-divider"></div>
+      <div class="comm-item">
+        <span class="comm-num" id="comm-checkins">—</span>
+        <span class="comm-label">次打卡</span>
+      </div>
+    </div>
+
     <!-- 打卡内容 -->
     <div class="checked-today hidden" id="checked-banner">
       <span class="icon">🌱</span>
@@ -914,7 +969,14 @@ function selectCommit(btn, val) {
 }
 
 function obFinish() {
-  const p = loadProfile(); p.onboarded = true; saveProfile(p);
+  const p = loadProfile();
+  p.onboarded = true;
+  // 引导页种下种子时上报（用户选择了标签）
+  if (p.seedTags && p.seedTags.length > 0 && !localStorage.getItem('haoleme_seed_counted')) {
+    hitCounter('seeds');
+    localStorage.setItem('haoleme_seed_counted', '1');
+  }
+  saveProfile(p);
   document.getElementById('onboarding').classList.add('hidden');
   initApp();
 }
@@ -943,6 +1005,7 @@ function initApp() {
   }
   renderSeedHero();
   initCheckin();
+  initCommunityStats();
 }
 
 // ═══════════════════════════════════
@@ -1040,9 +1103,17 @@ function saveSeed() {
     .map(b => b.dataset.val);
   const note = document.getElementById('seed-note-area').value.trim();
   const p = loadProfile();
+  const wasFirstSeed = !p.seedTags || p.seedTags.length === 0;
   p.seedTags = selectedTags;
   p.seedNote = note;
   saveProfile(p);
+  // 首次种下种子时上报
+  if (wasFirstSeed && selectedTags.length > 0 && !localStorage.getItem('haoleme_seed_counted')) {
+    hitCounter('seeds');
+    localStorage.setItem('haoleme_seed_counted', '1');
+    document.getElementById('comm-seeds').textContent =
+      (parseInt(document.getElementById('comm-seeds').textContent || '0') + 1).toLocaleString();
+  }
   renderSeedHero();
   closeOverlay('seed-overlay');
   showToast('已保存 🌿');
@@ -1107,6 +1178,10 @@ function initCheckin() {
     if (data.find(e => e.date === today)) { showToast('今天已经打过卡了 🌱'); return; }
     data.push({ date: today, text, mood: selectedMood, ts: Date.now() });
     saveData(data);
+    // 打卡成功上报
+    hitCounter('checkins');
+    document.getElementById('comm-checkins').textContent =
+      (parseInt(document.getElementById('comm-checkins').textContent || '0') + 1).toLocaleString();
     showToast('记录成功 🌿 明天见');
     renderSeedHero(); // 打卡后刷新种子英雄区
     document.getElementById('checked-banner').classList.remove('hidden');
@@ -1300,9 +1375,65 @@ document.querySelectorAll('.tab').forEach(tab => {
       cancelAnimationFrame(planetAnim); planetAnim = null;
     }
     // 切换到打卡页时刷新种子区（因为可能刚打卡）
-    if (tab.dataset.tab === 'checkin') renderSeedHero();
+    if (tab.dataset.tab === 'checkin') {
+      renderSeedHero();
+      // 实时刷新社区数据
+      fetchCounter('pageviews',  'comm-views');
+      fetchCounter('seeds',      'comm-seeds');
+      fetchCounter('checkins',   'comm-checkins');
+    }
   });
 });
+
+// ═══════════════════════════════════
+//  countapi 社区统计
+// ═══════════════════════════════════
+const NS = 'haoleme'; // 命名空间，全局唯一
+
+function fetchCounter(key, elId) {
+  fetch(`https://api.countapi.xyz/get/${NS}/${key}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.value !== undefined) {
+        document.getElementById(elId).textContent = d.value.toLocaleString();
+      }
+    })
+    .catch(() => {});
+}
+
+function hitCounter(key) {
+  fetch(`https://api.countapi.xyz/hit/${NS}/${key}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.value !== undefined) {
+        // 更新所有同名元素
+        document.querySelectorAll(`[data-counter="${key}"]`).forEach(el => {
+          el.textContent = d.value.toLocaleString();
+        });
+      }
+    })
+    .catch(() => {});
+}
+
+function initCommunityStats() {
+  // 页面加载：浏览量 +1
+  hitCounter('pageviews');
+
+  // 读取三个计数
+  fetchCounter('pageviews', 'comm-views');
+  fetchCounter('seeds',     'comm-seeds');
+  fetchCounter('checkins',  'comm-checkins');
+
+  // 种下种子时：seeds +1（每个设备只计一次）
+  // 检查 localStorage 是否已计过
+  if (!localStorage.getItem('haoleme_seed_counted')) {
+    const p = loadProfile();
+    if (p.seedTags && p.seedTags.length > 0) {
+      hitCounter('seeds');
+      localStorage.setItem('haoleme_seed_counted', '1');
+    }
+  }
+}
 
 // ═══════════════════════════════════
 //  启动
