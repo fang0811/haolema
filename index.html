@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="好了么">
+<title>好了么</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #F7F5F0;
+    --bg2:       #EDEAE3;
+    --text:      #2C2C2C;
+    --text-mute: #9B9589;
+    --accent:    #8B7355;
+    --accent2:   #C4A882;
+    --warm:      #E8DDD0;
+    --line:      #D8D3C8;
+    --green:     #7A9E7E;
+    --blue:      #7B9BB5;
+    --rose:      #C4847A;
+    --gold:      #D4AC6E;
+    --font-serif: 'Georgia', 'STSong', '宋体', serif;
+    --font-sans:  system-ui, -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    --radius: 16px;
+    --shadow: 0 2px 16px rgba(44,44,44,0.08);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ══════════════════════════
+     引导页
+  ══════════════════════════ */
+  #onboarding {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    padding-bottom: 60px;
+  }
+  #onboarding.hidden { display: none; }
+
+  .ob-hero {
+    width: 100%;
+    max-width: 480px;
+    padding: 60px 36px 0;
+  }
+  .ob-logo {
+    font-family: var(--font-serif);
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    font-weight: normal;
+  }
+  .ob-tagline {
+    font-size: 13px;
+    color: var(--text-mute);
+    letter-spacing: 1px;
+    line-height: 2;
+    margin-top: 6px;
+  }
+
+  .ob-steps {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    gap: 6px;
+    padding: 28px 36px 0;
+  }
+  .ob-step-dot {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: var(--line); transition: background 0.4s;
+  }
+  .ob-step-dot.done   { background: var(--accent); }
+  .ob-step-dot.active { background: var(--accent2); }
+
+  .ob-page {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 36px 0;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    animation: fadeUp 0.38s ease both;
+  }
+  .ob-page.active { display: flex; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .ob-step-label { font-size: 11px; letter-spacing: 3px; color: var(--text-mute); }
+  .ob-question   { font-size: 20px; color: var(--text); line-height: 1.6; font-weight: normal; }
+  .ob-desc       { font-size: 13px; color: var(--text-mute); line-height: 2; }
+
+  .ob-input {
+    width: 100%;
+    border: none;
+    background: white;
+    border-radius: 12px;
+    padding: 15px 18px;
+    font-size: 16px;
+    font-family: var(--font-sans);
+    color: var(--text);
+    outline: none;
+    box-shadow: var(--shadow);
+    letter-spacing: 1px;
+    transition: box-shadow 0.2s;
+  }
+  .ob-input:focus { box-shadow: 0 2px 20px rgba(139,115,85,0.18); }
+  .ob-input::placeholder { color: var(--text-mute); font-size: 14px; }
+
+  .seed-tags-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .seed-tag-btn {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 6px rgba(44,44,44,0.05);
+  }
+  .seed-tag-btn:hover { border-color: var(--accent2); background: var(--warm); }
+  .seed-tag-btn.selected {
+    border-color: var(--accent);
+    background: var(--warm);
+    color: var(--accent);
+    box-shadow: 0 2px 10px rgba(139,115,85,0.15);
+  }
+  .seed-tag-emoji { font-size: 15px; }
+
+  .ob-private-hint {
+    font-size: 12px;
+    color: var(--text-mute);
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+  }
+  .ob-private-hint:hover { color: var(--accent2); }
+  .ob-private-textarea {
+    width: 100%;
+    border: none;
+    background: white;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--text);
+    resize: none;
+    outline: none;
+    line-height: 1.8;
+    min-height: 90px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+    display: none;
+  }
+  .ob-private-textarea.show { display: block; }
+  .ob-private-textarea::placeholder { color: var(--text-mute); font-size: 13px; }
+  .ob-private-textarea:focus { box-shadow: 0 2px 18px rgba(139,115,85,0.12); }
+
+  .ob-options { display: flex; flex-direction: column; gap: 10px; }
+  .ob-option {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    box-shadow: 0 1px 6px rgba(44,44,44,0.04);
+  }
+  .ob-option:hover { border-color: var(--accent2); background: var(--warm); }
+  .ob-option.selected { border-color: var(--accent); background: var(--warm); color: var(--accent); }
+
+  .ob-btn-row { display: flex; gap: 10px; padding-top: 4px; }
+  .ob-btn-skip {
+    flex: 1; padding: 14px;
+    background: none; border: 1.5px solid var(--line);
+    border-radius: var(--radius); font-size: 14px;
+    color: var(--text-mute); cursor: pointer;
+    font-family: var(--font-sans); transition: all 0.2s;
+  }
+  .ob-btn-skip:hover { border-color: var(--accent2); color: var(--accent); }
+  .ob-btn-next {
+    flex: 2; padding: 14px;
+    background: var(--accent); border: none;
+    border-radius: var(--radius); font-size: 14px;
+    letter-spacing: 2px; color: white; cursor: pointer;
+    font-family: var(--font-sans); transition: opacity 0.2s, transform 0.1s;
+  }
+  .ob-btn-next:hover { opacity: 0.88; }
+  .ob-btn-next:active { transform: scale(0.98); }
+  .ob-btn-next.full { flex: 1; }
+
+  /* ══════════════════════════
+     主应用
+  ══════════════════════════ */
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 52px 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .logo {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    font-weight: normal;
+  }
+  .logo-sub { font-size: 12px; color: var(--text-mute); letter-spacing: 2px; }
+  .greeting { font-size: 13px; color: var(--accent2); letter-spacing: 1px; margin-top: 2px; }
+  .greeting.hidden { display: none; }
+
+  .tabs {
+    display: flex;
+    margin: 0 28px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 0;
+    font-size: 13px; color: var(--text-mute); cursor: pointer;
+    letter-spacing: 1px; border-bottom: 2px solid transparent;
+    transition: all 0.25s; background: none;
+    border-top: none; border-left: none; border-right: none;
+    font-family: var(--font-sans);
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .panel { display: none; flex: 1; }
+  .panel.active { display: block; }
+
+  /* ── 打卡面板 ── */
+  #panel-checkin { padding: 0 28px 40px; }
+
+  /* ══════════════════════════
+     种子区 — 主页核心
+  ══════════════════════════ */
+  .seed-hero {
+    background: white;
+    border-radius: var(--radius);
+    padding: 22px 20px 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .seed-hero:hover { background: #FDFBF8; }
+
+  /* 左上角种子图标 */
+  .seed-hero::before {
+    content: '🌰';
+    position: absolute;
+    top: 16px; right: 18px;
+    font-size: 20px;
+    opacity: 0.25;
+  }
+
+  /* 抗争计时区 */
+  .seed-journey {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .seed-journey-num {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .seed-journey-unit {
+    font-size: 13px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    padding-bottom: 4px;
+  }
+
+  /* 抗争状态文字 */
+  .seed-journey-label {
+    font-size: 12px;
+    color: var(--text-mute);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .seed-journey-label .date-range {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  /* 标签区 */
+  .seed-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .seed-tag-chip {
+    background: var(--warm);
+    border: 1px solid var(--accent2);
+    border-radius: 18px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .seed-no-tags {
+    font-size: 13px;
+    color: var(--text-mute);
+    font-style: italic;
+  }
+
+  /* 私密备注提示 */
+  .seed-has-note {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-mute);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* 编辑入口 */
+  .seed-edit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .seed-edit-label {
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+  }
+  .seed-cta {
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* ── 打卡相关 ── */
+  .date-hint { font-size: 12px; color: var(--text-mute); letter-spacing: 1px; margin-bottom: 20px; }
+
+  .checked-today {
+    background: var(--warm);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--accent);
+  }
+  .checked-today .icon { font-size: 20px; }
+  .checked-today.hidden { display: none; }
+
+  .input-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .input-label { font-size: 12px; color: var(--text-mute); letter-spacing: 2px; margin-bottom: 14px; display: block; }
+  .input-prompt { font-size: 16px; color: var(--text); margin-bottom: 16px; font-style: italic; line-height: 1.5; }
+
+  textarea {
+    width: 100%; border: none; background: var(--bg);
+    border-radius: 10px; padding: 14px 16px; font-size: 15px;
+    font-family: var(--font-sans); color: var(--text); resize: none;
+    outline: none; line-height: 1.7; min-height: 100px; transition: background 0.2s;
+  }
+  textarea:focus { background: var(--warm); }
+  textarea::placeholder { color: var(--text-mute); }
+
+  .mood-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .mood-btn {
+    background: var(--bg); border: 1.5px solid var(--line);
+    border-radius: 20px; padding: 6px 14px; font-size: 13px;
+    cursor: pointer; transition: all 0.2s; color: var(--text-mute);
+    font-family: var(--font-sans);
+  }
+  .mood-btn:hover { border-color: var(--accent2); color: var(--accent); }
+  .mood-btn.selected { background: var(--warm); border-color: var(--accent); color: var(--accent); }
+
+  .btn-submit {
+    width: 100%; padding: 16px; background: var(--accent);
+    color: white; border: none; border-radius: var(--radius);
+    font-size: 15px; letter-spacing: 3px; cursor: pointer;
+    font-family: var(--font-sans); transition: opacity 0.2s, transform 0.1s; margin-top: 8px;
+  }
+  .btn-submit:hover { opacity: 0.88; }
+  .btn-submit:active { transform: scale(0.98); }
+
+  /* ── 社区数据条 ── */
+  .community-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 8px rgba(44,44,44,0.06);
+  }
+  .comm-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .comm-num {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .comm-label {
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: 1px;
+  }
+  .comm-divider {
+    width: 1px;
+    height: 30px;
+    background: var(--line);
+    margin: 0 8px;
+  }
+
+  .quote-box {
+    margin-top: 24px; padding: 20px;
+    border-left: 3px solid var(--accent2);
+    font-size: 13px; color: var(--text-mute);
+    font-style: italic; line-height: 1.8;
+  }
+
+  /* ── 木心面板 ── */
+  #panel-rings { padding: 0 28px 40px; }
+  .vis-title { font-size: 12px; letter-spacing: 2px; color: var(--text-mute); margin-bottom: 20px; }
+  .canvas-wrap {
+    background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: center; padding: 20px; margin-bottom: 20px;
+  }
+  canvas { display: block; }
+
+  .ring-legend { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .legend-item {
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
+    background: white; border-radius: 12px; box-shadow: 0 1px 8px rgba(44,44,44,0.05);
+    cursor: pointer; transition: background 0.2s;
+  }
+  .legend-item:hover { background: var(--warm); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .legend-date { font-size: 11px; color: var(--text-mute); letter-spacing: 1px; }
+  .legend-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+
+  .empty-hint { text-align: center; color: var(--text-mute); font-size: 14px; padding: 60px 20px; line-height: 2; }
+
+  /* ── 星球面板 ── */
+  #panel-planet { padding: 0 28px 40px; }
+  .planet-wrap {
+    background: #1A1A2E; border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow: hidden; display: flex; align-items: center; justify-content: center;
+    padding: 20px 0; margin-bottom: 20px; position: relative;
+  }
+  .planet-count {
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 2px; white-space: nowrap;
+  }
+
+  /* ── 弹层通用 ── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(44,44,44,0.4);
+    display: flex; align-items: flex-end; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .sheet {
+    background: white; border-radius: 20px 20px 0 0; padding: 32px 28px 48px;
+    width: 100%; max-width: 480px; transform: translateY(60px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 82vh; overflow-y: auto; position: relative;
+  }
+  .overlay.show .sheet { transform: translateY(0); }
+  .sheet-title { font-size: 12px; letter-spacing: 2px; color: var(--text-mute); margin-bottom: 8px; }
+  .sheet-date  { font-size: 16px; color: var(--accent); margin-bottom: 4px; }
+  .sheet-mood  { font-size: 13px; color: var(--text-mute); margin-bottom: 16px; }
+  .sheet-content { font-size: 15px; color: var(--text); line-height: 1.8; }
+  .sheet-close {
+    position: absolute; top: 16px; right: 20px;
+    background: none; border: none; font-size: 20px;
+    color: var(--text-mute); cursor: pointer; padding: 8px;
+  }
+
+  /* ── 种子编辑弹层 ── */
+  #seed-overlay .sheet { padding-bottom: 36px; }
+  .seed-edit-section { margin-top: 20px; }
+  .seed-edit-title { font-size: 12px; letter-spacing: 2px; color: var(--text-mute); margin-bottom: 12px; }
+  .seed-tags-edit { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+  .seed-edit-tag {
+    background: var(--bg); border: 1.5px solid var(--line);
+    border-radius: 22px; padding: 7px 16px; font-size: 13px;
+    color: var(--text); cursor: pointer; transition: all 0.2s;
+    font-family: var(--font-sans); display: flex; align-items: center; gap: 6px;
+  }
+  .seed-edit-tag:hover { border-color: var(--accent2); }
+  .seed-edit-tag.selected { border-color: var(--accent); background: var(--warm); color: var(--accent); }
+
+  .seed-note-toggle {
+    font-size: 12px; color: var(--text-mute); cursor: pointer;
+    display: flex; align-items: center; gap: 5px; margin-bottom: 10px;
+    user-select: none; letter-spacing: 0.5px;
+  }
+  .seed-note-toggle:hover { color: var(--accent2); }
+  .seed-note-area {
+    width: 100%; border: none; background: var(--bg); border-radius: 10px;
+    padding: 13px 15px; font-size: 14px; font-family: var(--font-sans);
+    color: var(--text); resize: none; outline: none; line-height: 1.8;
+    min-height: 88px; margin-bottom: 16px; transition: background 0.2s; display: none;
+  }
+  .seed-note-area.show { display: block; }
+  .seed-note-area:focus { background: var(--warm); }
+  .seed-note-area::placeholder { color: var(--text-mute); font-size: 13px; }
+
+  .btn-save-seed {
+    width: 100%; padding: 14px; background: var(--accent);
+    color: white; border: none; border-radius: var(--radius);
+    font-size: 14px; letter-spacing: 2px; cursor: pointer;
+    font-family: var(--font-sans); transition: opacity 0.2s;
+  }
+  .btn-save-seed:hover { opacity: 0.88; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: white;
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; letter-spacing: 1px; opacity: 0;
+    transition: all 0.3s; pointer-events: none; z-index: 200; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 360px) {
+    header { padding: 40px 20px 16px; }
+    .tabs { margin: 0 20px 20px; }
+    #panel-checkin, #panel-rings, #panel-planet { padding: 0 20px 40px; }
+    .ob-hero, .ob-page, .ob-steps { padding-left: 22px; padding-right: 22px; }
+    .seed-journey-num { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     首次引导页
+══════════════════════════════════ -->
+<div id="onboarding" class="hidden">
+  <div class="ob-hero">
+    <div class="ob-logo">好 了 么</div>
+    <p class="ob-tagline">在你划开手机之前<br>先停一秒，看看自己已经拥有了什么</p>
+  </div>
+
+  <div class="ob-steps">
+    <div class="ob-step-dot active" id="dot-0"></div>
+    <div class="ob-step-dot" id="dot-1"></div>
+    <div class="ob-step-dot" id="dot-2"></div>
+  </div>
+
+  <!-- Step 0：欢迎 + 名字 -->
+  <div class="ob-page active" id="ob-0">
+    <span class="ob-step-label">STEP 01 / 03</span>
+    <h2 class="ob-question">你好，欢迎来这里。</h2>
+    <p class="ob-desc">
+      这里只做一件事：<br>
+      每天记下一件让你觉得"还不错"的小事。<br>
+      慢慢地，你会看见自己的生命<br>一圈一圈，长出了木心纹路。
+    </p>
+    <p class="ob-desc" style="color:var(--accent2);">该怎么称呼你？</p>
+    <input class="ob-input" id="ob-name" type="text" placeholder="你的名字或昵称（可不填）" maxlength="20">
+    <div class="ob-btn-row">
+      <button class="ob-btn-next full" onclick="obNext(0)">继 续 →</button>
+    </div>
+  </div>
+
+  <!-- Step 1：选择焦虑类型 -->
+  <div class="ob-page" id="ob-1">
+    <span class="ob-step-label">STEP 02 / 03</span>
+    <h2 class="ob-question">是什么，让你总是放不下？</h2>
+    <p class="ob-desc">选一个或几个，它们会成为你这棵树<br>最深处的种子。（可多选）</p>
+
+    <div class="seed-tags-grid" id="ob-seed-tags">
+      <button class="seed-tag-btn" data-val="遗憾"><span class="seed-tag-emoji">🍂</span>一件遗憾的事</button>
+      <button class="seed-tag-btn" data-val="关系"><span class="seed-tag-emoji">🌫</span>某段关系</button>
+      <button class="seed-tag-btn" data-val="选择"><span class="seed-tag-emoji">🪨</span>一个错误的决定</button>
+      <button class="seed-tag-btn" data-val="未来"><span class="seed-tag-emoji">🌀</span>对未来的担心</button>
+      <button class="seed-tag-btn" data-val="自我"><span class="seed-tag-emoji">🌑</span>对自己的不满</button>
+      <button class="seed-tag-btn" data-val="失去"><span class="seed-tag-emoji">🕯</span>失去的东西</button>
+      <button class="seed-tag-btn" data-val="时间"><span class="seed-tag-emoji">⏳</span>时间不够用</button>
+      <button class="seed-tag-btn" data-val="说不清"><span class="seed-tag-emoji">🌧</span>说不清楚，就是难受</button>
+    </div>
+
+    <!-- 可选：私密备注 -->
+    <div>
+      <div class="ob-private-hint" onclick="toggleObNote()">
+        <span id="ob-note-arrow">▸</span>
+        <span>写点私密备注（只有你自己能看，可不填）</span>
+      </div>
+      <textarea class="ob-private-textarea" id="ob-note"
+        placeholder="随便写，没人会看到……" rows="4" maxlength="500"></textarea>
+    </div>
+
+    <div class="ob-btn-row">
+      <button class="ob-btn-skip" onclick="obSkip()">跳过</button>
+      <button class="ob-btn-next" onclick="obNext(1)">种 下 它 →</button>
+    </div>
+  </div>
+
+  <!-- Step 2：承诺 -->
+  <div class="ob-page" id="ob-2">
+    <span class="ob-step-label">STEP 03 / 03</span>
+    <h2 class="ob-question">好。现在，开始今天。</h2>
+    <p class="ob-desc">
+      每天只需要一件小事。<br>
+      哪怕只是"今天的咖啡比平时好喝一点点"，也算。
+    </p>
+    <div class="ob-options">
+      <button class="ob-option" onclick="selectCommit(this,'yes')">🌱 &nbsp;愿意，我试试看</button>
+      <button class="ob-option" onclick="selectCommit(this,'maybe')">🍃 &nbsp;不确定，但我先来了</button>
+      <button class="ob-option" onclick="selectCommit(this,'open')">🌧 &nbsp;走一步看一步</button>
+    </div>
+    <div class="ob-btn-row" style="margin-top:4px;">
+      <button class="ob-btn-next full" onclick="obFinish()">进 入 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     主应用
+══════════════════════════════════ -->
+<div id="app">
+  <header>
+    <div class="logo">好 了 么</div>
+    <div class="logo-sub">每一个小确幸，都是你存在过的证明</div>
+    <div class="greeting hidden" id="greeting"></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="checkin">今日打卡</button>
+    <button class="tab" data-tab="rings">木 心</button>
+    <button class="tab" data-tab="planet">星 球</button>
+  </nav>
+
+  <!-- 打卡面板 -->
+  <div id="panel-checkin" class="panel active">
+    <p class="date-hint" id="today-label"></p>
+
+    <!-- ══════════════════════════
+         种子英雄区（主页核心）
+    ══════════════════════════ -->
+    <div class="seed-hero" id="seed-hero" onclick="openSeedEdit()">
+      <!-- 抗争计时 -->
+      <div class="seed-journey">
+        <span class="seed-journey-num" id="seed-days">—</span>
+        <span class="seed-journey-unit">天</span>
+      </div>
+      <div class="seed-journey-label" id="seed-journey-label"></div>
+
+      <!-- 种子标签 -->
+      <div class="seed-tags-row" id="seed-tags-row"></div>
+
+      <!-- 私密备注提示 -->
+      <div class="seed-has-note hidden" id="seed-has-note">
+        <span>🔒</span><span>有一条私密备注</span>
+      </div>
+
+      <!-- 编辑入口 -->
+      <div class="seed-edit-row">
+        <span class="seed-edit-label">🌰 你的种子</span>
+        <span class="seed-cta">查看 &amp; 修改 ›</span>
+      </div>
+    </div>
+
+    <!-- 社区数据区 -->
+    <div class="community-bar" id="community-bar">
+      <div class="comm-item">
+        <span class="comm-num" id="comm-views">—</span>
+        <span class="comm-label">次浏览</span>
+      </div>
+      <div class="comm-divider"></div>
+      <div class="comm-item">
+        <span class="comm-num" id="comm-seeds">—</span>
+        <span class="comm-label">人种下种子</span>
+      </div>
+      <div class="comm-divider"></div>
+      <div class="comm-item">
+        <span class="comm-num" id="comm-checkins">—</span>
+        <span class="comm-label">次打卡</span>
+      </div>
+    </div>
+
+    <!-- 打卡内容 -->
+    <div class="checked-today hidden" id="checked-banner">
+      <span class="icon">🌱</span>
+      <span id="checked-text">今天已经打卡了，明天见。</span>
+    </div>
+
+    <div class="input-card" id="input-area">
+      <span class="input-label">TODAY'S LITTLE JOY</span>
+      <p class="input-prompt" id="prompt-text"></p>
+      <textarea id="joy-input" placeholder="今天有什么让你微微一笑的事……" rows="4" maxlength="200"></textarea>
+      <div class="mood-row">
+        <button class="mood-btn" data-mood="☀️ 温暖">☀️ 温暖</button>
+        <button class="mood-btn" data-mood="🌧 平静">🌧 平静</button>
+        <button class="mood-btn" data-mood="🍵 慵懒">🍵 慵懒</button>
+        <button class="mood-btn" data-mood="🌸 惊喜">🌸 惊喜</button>
+        <button class="mood-btn" data-mood="🌙 沉思">🌙 沉思</button>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="btn-submit">记 录 今 天</button>
+    <div class="quote-box" id="quote-box"></div>
+  </div>
+
+  <!-- 木心面板 -->
+  <div id="panel-rings" class="panel">
+    <p class="vis-title">WOOD HEART · 你的木心</p>
+    <div class="canvas-wrap">
+      <canvas id="ring-canvas" width="300" height="300"></canvas>
+    </div>
+    <div class="ring-legend" id="ring-legend"></div>
+    <div class="empty-hint hidden" id="rings-empty">
+      还没有记录<br>去打第一张卡，刻下你的第一道纹路 🌱
+    </div>
+  </div>
+
+  <!-- 星球面板 -->
+  <div id="panel-planet" class="panel">
+    <p class="vis-title">PLANET · 你的星球</p>
+    <div class="planet-wrap">
+      <canvas id="planet-canvas" width="320" height="320"></canvas>
+      <div class="planet-count" id="planet-count"></div>
+    </div>
+    <div class="empty-hint hidden" id="planet-empty">
+      还没有星星<br>去打卡，点亮你的第一颗星 ✨
+    </div>
+  </div>
+</div>
+
+<!-- 打卡详情弹层 -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <button class="sheet-close" onclick="closeOverlay('overlay')">×</button>
+    <p class="sheet-title">LITTLE JOY</p>
+    <p class="sheet-date" id="sheet-date"></p>
+    <p class="sheet-mood" id="sheet-mood"></p>
+    <p class="sheet-content" id="sheet-content"></p>
+  </div>
+</div>
+
+<!-- 种子编辑弹层 -->
+<div class="overlay" id="seed-overlay">
+  <div class="sheet">
+    <button class="sheet-close" onclick="closeOverlay('seed-overlay')">×</button>
+    <p class="sheet-title">🌰 你的种子</p>
+    <p style="font-size:13px;color:var(--text-mute);line-height:1.9;margin-top:8px;">
+      那些放不下的事，随时可以修改。<br>它们是你的根，不是你的牢。
+    </p>
+
+    <div class="seed-edit-section">
+      <div class="seed-edit-title">是什么让你放不下？（可多选）</div>
+      <div class="seed-tags-edit" id="seed-edit-tags">
+        <button class="seed-edit-tag" data-val="遗憾"><span>🍂</span>一件遗憾的事</button>
+        <button class="seed-edit-tag" data-val="关系"><span>🌫</span>某段关系</button>
+        <button class="seed-edit-tag" data-val="选择"><span>🪨</span>一个错误的决定</button>
+        <button class="seed-edit-tag" data-val="未来"><span>🌀</span>对未来的担心</button>
+        <button class="seed-edit-tag" data-val="自我"><span>🌑</span>对自己的不满</button>
+        <button class="seed-edit-tag" data-val="失去"><span>🕯</span>失去的东西</button>
+        <button class="seed-edit-tag" data-val="时间"><span>⏳</span>时间不够用</button>
+        <button class="seed-edit-tag" data-val="说不清"><span>🌧</span>说不清，就是难受</button>
+      </div>
+
+      <div class="seed-note-toggle" onclick="toggleSeedNote()">
+        <span id="seed-note-arrow">▸</span>
+        <span id="seed-note-label">私密备注（只有你能看）</span>
+      </div>
+      <textarea class="seed-note-area" id="seed-note-area"
+        placeholder="随便写……" rows="4" maxlength="500"></textarea>
+
+      <button class="btn-save-seed" onclick="saveSeed()">保 存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════
+//  存储
+// ═══════════════════════════════════
+const KEY_DATA    = 'haoleme_v1';
+const KEY_PROFILE = 'haoleme_profile';
+
+function loadData()    { try { return JSON.parse(localStorage.getItem(KEY_DATA))    || []; } catch(e){ return []; } }
+function saveData(a)   { localStorage.setItem(KEY_DATA, JSON.stringify(a)); }
+function loadProfile() { try { return JSON.parse(localStorage.getItem(KEY_PROFILE)) || {}; } catch(e){ return {}; } }
+function saveProfile(p){ localStorage.setItem(KEY_PROFILE, JSON.stringify(p)); }
+
+// ═══════════════════════════════════
+//  工具函数
+// ═══════════════════════════════════
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function formatDisplay(s) {
+  const [y,m,d] = s.split('-');
+  const wk = ['日','一','二','三','四','五','六'];
+  const dt = new Date(+y, +m-1, +d);
+  return `${y} 年 ${+m} 月 ${+d} 日  周${wk[dt.getDay()]}`;
+}
+// 计算两个日期相差天数
+function daysBetween(d1, d2) {
+  const a = new Date(d1);
+  const b = new Date(d2);
+  a.setHours(0,0,0,0);
+  b.setHours(0,0,0,0);
+  return Math.floor((b - a) / 86400000);
+}
+function monthDay(s) {
+  const [y,m,d] = s.split('-');
+  return `${+m}月${+d}日`;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function closeOverlay(id) { document.getElementById(id).classList.remove('show'); }
+
+// ═══════════════════════════════════
+//  标签映射
+// ═══════════════════════════════════
+const SEED_TAG_MAP = {
+  '遗憾': { emoji:'🍂', text:'一件遗憾的事' },
+  '关系': { emoji:'🌫', text:'某段关系' },
+  '选择': { emoji:'🪨', text:'一个错误的决定' },
+  '未来': { emoji:'🌀', text:'对未来的担心' },
+  '自我': { emoji:'🌑', text:'对自己的不满' },
+  '失去': { emoji:'🕯', text:'失去的东西' },
+  '时间': { emoji:'⏳', text:'时间不够用' },
+  '说不清': { emoji:'🌧', text:'说不清，就是难受' },
+};
+
+// ═══════════════════════════════════
+//  引导页
+// ═══════════════════════════════════
+let obSelectedTags = new Set();
+
+document.querySelectorAll('#ob-seed-tags .seed-tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const v = btn.dataset.val;
+    if (obSelectedTags.has(v)) { obSelectedTags.delete(v); btn.classList.remove('selected'); }
+    else { obSelectedTags.add(v); btn.classList.add('selected'); }
+  });
+});
+
+function toggleObNote() {
+  const ta = document.getElementById('ob-note');
+  const arrow = document.getElementById('ob-note-arrow');
+  const show = !ta.classList.contains('show');
+  ta.classList.toggle('show', show);
+  arrow.textContent = show ? '▾' : '▸';
+}
+
+function obShowStep(n) {
+  document.querySelectorAll('.ob-page').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.ob-step-dot').forEach((d,i) => {
+    d.classList.remove('done','active');
+    if (i < n) d.classList.add('done');
+    if (i === n) d.classList.add('active');
+  });
+}
+
+function obNext(step) {
+  if (step === 0) {
+    const name = document.getElementById('ob-name').value.trim();
+    const p = loadProfile();
+    p.name = name;
+    saveProfile(p);
+    obShowStep(1);
+  } else if (step === 1) {
+    const note = document.getElementById('ob-note').value.trim();
+    const p = loadProfile();
+    p.seedTags = [...obSelectedTags];
+    p.seedNote = note;
+    p.startDate = todayStr(); // 记录开始种树的日期
+    saveProfile(p);
+    obShowStep(2);
+  }
+}
+
+function obSkip() {
+  const p = loadProfile();
+  p.startDate = todayStr();
+  saveProfile(p);
+  obShowStep(2);
+}
+
+function selectCommit(btn, val) {
+  document.querySelectorAll('#ob-2 .ob-option').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const p = loadProfile(); p.commit = val; saveProfile(p);
+}
+
+function obFinish() {
+  const p = loadProfile();
+  p.onboarded = true;
+  // 引导页种下种子时上报（用户选择了标签）
+  if (p.seedTags && p.seedTags.length > 0 && !localStorage.getItem('haoleme_seed_counted')) {
+    hitCounter('seeds');
+    localStorage.setItem('haoleme_seed_counted', '1');
+  }
+  saveProfile(p);
+  document.getElementById('onboarding').classList.add('hidden');
+  initApp();
+}
+
+// ═══════════════════════════════════
+//  启动
+// ═══════════════════════════════════
+function boot() {
+  const p = loadProfile();
+  if (!p.onboarded) {
+    document.getElementById('onboarding').classList.remove('hidden');
+  } else {
+    initApp();
+  }
+}
+
+// ═══════════════════════════════════
+//  主应用
+// ═══════════════════════════════════
+function initApp() {
+  const p = loadProfile();
+  if (p.name) {
+    const g = document.getElementById('greeting');
+    g.textContent = `你好，${p.name}`;
+    g.classList.remove('hidden');
+  }
+  renderSeedHero();
+  initCheckin();
+  initCommunityStats();
+}
+
+// ═══════════════════════════════════
+//  种子英雄区 — 主页核心
+// ═══════════════════════════════════
+function renderSeedHero() {
+  const p = loadProfile();
+  const data = loadData();
+  const tags = p.seedTags || [];
+  const note = p.seedNote || '';
+  const today = todayStr();
+
+  // 抗争天数：优先用首次打卡日，其次用开始日期
+  const firstDate = data.length > 0
+    ? [...data].sort((a,b) => a.date.localeCompare(b.date))[0].date
+    : (p.startDate || today);
+
+  const days = daysBetween(firstDate, today);
+
+  // 天数显示
+  const daysEl = document.getElementById('seed-days');
+  daysEl.textContent = days;
+
+  // 状态文字
+  const labelEl = document.getElementById('seed-journey-label');
+  if (data.length === 0) {
+    labelEl.innerHTML = `从 <span class="date-range">${monthDay(firstDate)}</span> 开始种下，至今暂无记录`;
+  } else {
+    labelEl.innerHTML = `从 <span class="date-range">${monthDay(firstDate)}</span> 到今天，你记录了 <strong>${data.length}</strong> 段小确幸`;
+  }
+
+  // 标签
+  const tagsRow = document.getElementById('seed-tags-row');
+  tagsRow.innerHTML = '';
+  if (tags.length > 0) {
+    tags.forEach(v => {
+      const info = SEED_TAG_MAP[v];
+      if (!info) return;
+      const chip = document.createElement('div');
+      chip.className = 'seed-tag-chip';
+      chip.innerHTML = `<span>${info.emoji}</span><span>${info.text}</span>`;
+      tagsRow.appendChild(chip);
+    });
+  } else {
+    const el = document.createElement('span');
+    el.className = 'seed-no-tags';
+    el.textContent = '点击选择你的种子';
+    tagsRow.appendChild(el);
+  }
+
+  // 私密备注
+  document.getElementById('seed-has-note').classList.toggle('hidden', !note);
+}
+
+// ── 打开种子编辑弹层 ──
+function openSeedEdit() {
+  const p = loadProfile();
+  const tags = new Set(p.seedTags || []);
+
+  document.querySelectorAll('#seed-edit-tags .seed-edit-tag').forEach(btn => {
+    btn.classList.toggle('selected', tags.has(btn.dataset.val));
+  });
+
+  const note = p.seedNote || '';
+  const noteArea = document.getElementById('seed-note-area');
+  noteArea.value = note;
+  const noteArrow = document.getElementById('seed-note-arrow');
+  const noteLabel = document.getElementById('seed-note-label');
+  if (note) {
+    noteArea.classList.add('show');
+    noteArrow.textContent = '▾';
+    noteLabel.textContent = '私密备注（只有你能看）';
+  } else {
+    noteArea.classList.remove('show');
+    noteArrow.textContent = '▸';
+  }
+
+  document.getElementById('seed-overlay').classList.add('show');
+}
+
+document.querySelectorAll('#seed-edit-tags .seed-edit-tag').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('selected'));
+});
+
+function toggleSeedNote() {
+  const area = document.getElementById('seed-note-area');
+  const arrow = document.getElementById('seed-note-arrow');
+  const show = !area.classList.contains('show');
+  area.classList.toggle('show', show);
+  arrow.textContent = show ? '▾' : '▸';
+}
+
+function saveSeed() {
+  const selectedTags = [...document.querySelectorAll('#seed-edit-tags .seed-edit-tag.selected')]
+    .map(b => b.dataset.val);
+  const note = document.getElementById('seed-note-area').value.trim();
+  const p = loadProfile();
+  const wasFirstSeed = !p.seedTags || p.seedTags.length === 0;
+  p.seedTags = selectedTags;
+  p.seedNote = note;
+  saveProfile(p);
+  // 首次种下种子时上报
+  if (wasFirstSeed && selectedTags.length > 0 && !localStorage.getItem('haoleme_seed_counted')) {
+    hitCounter('seeds');
+    localStorage.setItem('haoleme_seed_counted', '1');
+    document.getElementById('comm-seeds').textContent =
+      (parseInt(document.getElementById('comm-seeds').textContent || '0') + 1).toLocaleString();
+  }
+  renderSeedHero();
+  closeOverlay('seed-overlay');
+  showToast('已保存 🌿');
+}
+
+// ═══════════════════════════════════
+//  打卡
+// ═══════════════════════════════════
+const PROMPTS = [
+  '今天，有没有一个瞬间让你觉得"还不错"？',
+  '哪怕只是一口好喝的茶，也算。',
+  '今天，有什么让你多看了一眼？',
+  '生活里有什么小事，让你悄悄松了一口气？',
+  '今天遇见的光，是什么颜色的？',
+  '有没有什么，让你微微弯起了嘴角？',
+  '今天，你好好呼吸了多少次？',
+  '哪怕只是窗外的风，也值得被记住。',
+];
+const QUOTES = [
+  '后悔是过去的影子，小确幸是现在的光。',
+  '人生不需要完美，只需要足够真实。',
+  '你走过的每一天，都算数。',
+  '那些微小的美好，正在悄悄撑起你的世界。',
+  '不必翻旧账，此刻已经够了。',
+  '每一个小确幸，都是你没有被淹没的证明。',
+  '慢慢来，比较快。',
+  '你值得被温柔对待，包括被你自己。',
+];
+
+let selectedMood = '';
+
+function initCheckin() {
+  const today = todayStr();
+  document.getElementById('today-label').textContent = formatDisplay(today);
+  document.getElementById('prompt-text').textContent = PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+  document.getElementById('quote-box').textContent = '「' + QUOTES[Math.floor(Math.random() * QUOTES.length)] + '」';
+
+  const data = loadData();
+  const todayEntry = data.find(e => e.date === today);
+  if (todayEntry) {
+    document.getElementById('checked-banner').classList.remove('hidden');
+    document.getElementById('checked-text').textContent =
+      `今天已经打卡了 ${todayEntry.mood || ''} — "${todayEntry.text}"`;
+    document.getElementById('input-area').style.opacity = '0.4';
+    document.getElementById('input-area').style.pointerEvents = 'none';
+    document.getElementById('btn-submit').style.opacity = '0.3';
+    document.getElementById('btn-submit').style.pointerEvents = 'none';
+  }
+
+  document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedMood = btn.dataset.mood;
+    });
+  });
+
+  document.getElementById('btn-submit').addEventListener('click', () => {
+    const text = document.getElementById('joy-input').value.trim();
+    if (!text) { showToast('写点什么吧 ✏️'); return; }
+    const data = loadData();
+    if (data.find(e => e.date === today)) { showToast('今天已经打过卡了 🌱'); return; }
+    data.push({ date: today, text, mood: selectedMood, ts: Date.now() });
+    saveData(data);
+    // 打卡成功上报
+    hitCounter('checkins');
+    document.getElementById('comm-checkins').textContent =
+      (parseInt(document.getElementById('comm-checkins').textContent || '0') + 1).toLocaleString();
+    showToast('记录成功 🌿 明天见');
+    renderSeedHero(); // 打卡后刷新种子英雄区
+    document.getElementById('checked-banner').classList.remove('hidden');
+    document.getElementById('checked-text').textContent =
+      `今天已经打卡了 ${selectedMood || ''} — "${text}"`;
+    document.getElementById('input-area').style.opacity = '0.4';
+    document.getElementById('input-area').style.pointerEvents = 'none';
+    document.getElementById('btn-submit').style.opacity = '0.3';
+    document.getElementById('btn-submit').style.pointerEvents = 'none';
+  });
+}
+
+// ═══════════════════════════════════
+//  木心年轮图
+// ═══════════════════════════════════
+const RING_COLORS = [
+  '#C4A882','#8B7355','#7A9E7E','#7B9BB5','#C4847A',
+  '#D4AC6E','#9B8EA0','#82A89B','#C4A87A','#8B9B7A',
+];
+
+function drawRings() {
+  const data = loadData();
+  const canvas = document.getElementById('ring-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2;
+
+  ctx.clearRect(0, 0, W, H);
+  document.getElementById('ring-legend').innerHTML = '';
+
+  if (data.length === 0) {
+    document.getElementById('rings-empty').classList.remove('hidden');
+    ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2); ctx.fillStyle = '#E8DDD0'; ctx.fill();
+    return;
+  }
+  document.getElementById('rings-empty').classList.add('hidden');
+
+  const sorted = [...data].sort((a,b) => a.date.localeCompare(b.date));
+  const n = sorted.length;
+  const maxR = Math.min(cx,cy) - 10;
+  const coreR = 18;
+  const ringW = Math.min((maxR - coreR) / n, 22);
+
+  ctx.beginPath(); ctx.arc(cx,cy,maxR,0,Math.PI*2); ctx.fillStyle='#F5EFE6'; ctx.fill();
+
+  for (let i = 0; i < n; i++) {
+    const r = coreR + (n-i)*ringW;
+    const color = RING_COLORS[i % RING_COLORS.length];
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.arc(cx,cy,r-ringW+1,0,Math.PI*2,true);
+    ctx.fillStyle = color+'22'; ctx.fill();
+  }
+
+  // 树芯
+  const grad = ctx.createRadialGradient(cx-4,cy-4,2,cx,cy,coreR);
+  grad.addColorStop(0,'#C4926A'); grad.addColorStop(1,'#5C3A1E');
+  ctx.beginPath(); ctx.arc(cx,cy,coreR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+  ctx.font='9px sans-serif'; ctx.fillStyle='rgba(255,235,210,0.55)';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('根',cx,cy);
+
+  const legend = document.getElementById('ring-legend');
+  [...sorted].reverse().forEach((entry,i) => {
+    const origIdx = n-1-i;
+    const color = RING_COLORS[origIdx % RING_COLORS.length];
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${color}"></div>
+      <div>
+        <div class="legend-date">${formatDisplay(entry.date)}${entry.mood?' '+entry.mood:''}</div>
+        <div class="legend-text">${escHtml(entry.text)}</div>
+      </div>`;
+    item.addEventListener('click', () => openSheet(entry));
+    legend.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════
+//  星球动画
+// ═══════════════════════════════════
+let planetAnim = null;
+
+function drawPlanet() {
+  const data = loadData();
+  const canvas = document.getElementById('planet-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2;
+
+  if (planetAnim) { cancelAnimationFrame(planetAnim); planetAnim = null; }
+  document.getElementById('planet-count').textContent = '';
+  document.getElementById('planet-empty').classList.add('hidden');
+
+  if (data.length === 0) {
+    document.getElementById('planet-empty').classList.remove('hidden');
+    drawPlanetCore(ctx,cx,cy); return;
+  }
+
+  const sorted = [...data].sort((a,b) => a.date.localeCompare(b.date));
+  const n = sorted.length;
+  document.getElementById('planet-count').textContent = `${n} 颗星已点亮`;
+
+  const orbitColors = ['#D4AC6E','#7A9E7E','#7B9BB5','#C4847A','#C4A882','#9B8EA0','#82A89B','#ffffff'];
+  const stars = sorted.map((entry,i) => {
+    const layer = Math.floor(i/8);
+    return {
+      orbitR: Math.min(60+layer*22+(i%8)*3, 138),
+      speed: 0.003+(i%5)*0.0008,
+      angle: i*137.508*Math.PI/90,
+      size: 2+(i%3)*0.8,
+      color: orbitColors[i%orbitColors.length],
+      opacity: 0.6+Math.random()*0.4,
+      twinkle: Math.random()*Math.PI*2,
+    };
+  });
+
+  let t = 0;
+  function frame() {
+    ctx.clearRect(0,0,W,H);
+    drawStarBg(ctx,W,H,t);
+    stars.forEach(s => {
+      ctx.beginPath(); ctx.arc(cx,cy,s.orbitR,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1; ctx.stroke();
+    });
+    drawPlanetCore(ctx,cx,cy);
+    stars.forEach(s => {
+      const a = s.angle+s.speed*t;
+      const x = cx+s.orbitR*Math.cos(a);
+      const y = cy+s.orbitR*Math.sin(a)*0.45;
+      const tw = 0.7+0.3*Math.sin(t*0.05+s.twinkle);
+      ctx.beginPath(); ctx.arc(x,y,s.size*tw,0,Math.PI*2);
+      ctx.fillStyle=s.color; ctx.globalAlpha=s.opacity*tw; ctx.fill();
+      ctx.globalAlpha=1;
+      const grd = ctx.createRadialGradient(x,y,0,x,y,s.size*3);
+      grd.addColorStop(0,s.color+'55'); grd.addColorStop(1,s.color+'00');
+      ctx.beginPath(); ctx.arc(x,y,s.size*3,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+    });
+    t++; planetAnim = requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+function drawPlanetCore(ctx,cx,cy) {
+  const atm = ctx.createRadialGradient(cx,cy,30,cx,cy,52);
+  atm.addColorStop(0,'rgba(139,115,85,0)'); atm.addColorStop(1,'rgba(139,115,85,0.25)');
+  ctx.beginPath(); ctx.arc(cx,cy,52,0,Math.PI*2); ctx.fillStyle=atm; ctx.fill();
+  const pg = ctx.createRadialGradient(cx-8,cy-8,4,cx,cy,38);
+  pg.addColorStop(0,'#D4AC6E'); pg.addColorStop(0.5,'#8B7355'); pg.addColorStop(1,'#3A2F1E');
+  ctx.beginPath(); ctx.arc(cx,cy,38,0,Math.PI*2); ctx.fillStyle=pg; ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx-10,cy-12,14,8,-Math.PI/5,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,240,200,0.15)'; ctx.fill();
+}
+
+function drawStarBg(ctx,W,H,t) {
+  [[40,30],[80,60],[150,20],[200,80],[280,40],[300,100],[60,150],[120,200],
+   [240,160],[310,220],[30,250],[180,280],[260,300],[100,310],[320,260],[70,90],[220,130],[170,240]]
+  .forEach(([x,y],i) => {
+    const tw = 0.5+0.5*Math.sin(t*0.02+i);
+    ctx.beginPath(); ctx.arc(x,y,0.8,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${0.2+0.3*tw})`; ctx.fill();
+  });
+}
+
+// ═══════════════════════════════════
+//  详情弹层
+// ═══════════════════════════════════
+function openSheet(entry) {
+  document.getElementById('sheet-date').textContent = formatDisplay(entry.date);
+  document.getElementById('sheet-mood').textContent = entry.mood || '';
+  document.getElementById('sheet-content').textContent = entry.text;
+  document.getElementById('overlay').classList.add('show');
+}
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeOverlay('overlay');
+});
+document.getElementById('seed-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('seed-overlay')) closeOverlay('seed-overlay');
+});
+
+// ═══════════════════════════════════
+//  标签切换
+// ═══════════════════════════════════
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'rings') drawRings();
+    if (tab.dataset.tab === 'planet') drawPlanet();
+    if (tab.dataset.tab !== 'planet' && planetAnim) {
+      cancelAnimationFrame(planetAnim); planetAnim = null;
+    }
+    // 切换到打卡页时刷新种子区（因为可能刚打卡）
+    if (tab.dataset.tab === 'checkin') {
+      renderSeedHero();
+      // 实时刷新社区数据
+      fetchCounter('pageviews',  'comm-views');
+      fetchCounter('seeds',      'comm-seeds');
+      fetchCounter('checkins',   'comm-checkins');
+    }
+  });
+});
+
+// ═══════════════════════════════════
+//  countapi 社区统计
+// ═══════════════════════════════════
+const NS = 'haoleme'; // 命名空间，全局唯一
+
+function fetchCounter(key, elId) {
+  fetch(`https://api.countapi.xyz/get/${NS}/${key}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.value !== undefined) {
+        document.getElementById(elId).textContent = d.value.toLocaleString();
+      }
+    })
+    .catch(() => {});
+}
+
+function hitCounter(key) {
+  fetch(`https://api.countapi.xyz/hit/${NS}/${key}`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.value !== undefined) {
+        // 更新所有同名元素
+        document.querySelectorAll(`[data-counter="${key}"]`).forEach(el => {
+          el.textContent = d.value.toLocaleString();
+        });
+      }
+    })
+    .catch(() => {});
+}
+
+function initCommunityStats() {
+  // 页面加载：浏览量 +1
+  hitCounter('pageviews');
+
+  // 读取三个计数
+  fetchCounter('pageviews', 'comm-views');
+  fetchCounter('seeds',     'comm-seeds');
+  fetchCounter('checkins',  'comm-checkins');
+
+  // 种下种子时：seeds +1（每个设备只计一次）
+  // 检查 localStorage 是否已计过
+  if (!localStorage.getItem('haoleme_seed_counted')) {
+    const p = loadProfile();
+    if (p.seedTags && p.seedTags.length > 0) {
+      hitCounter('seeds');
+      localStorage.setItem('haoleme_seed_counted', '1');
+    }
+  }
+}
+
+// ═══════════════════════════════════
+//  启动
+// ═══════════════════════════════════
+boot();
+</script>
+</body>
+</html>
